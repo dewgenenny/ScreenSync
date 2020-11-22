@@ -28,3 +28,5 @@ Additionally, you can provide a timing setting - this impacts how often the scre
 
 `python3 screensync.py --led_mac 63039F06BE28 --timing fast`
 
+Here's a video of it in action - https://youtu.be/0lskW9P4WpQ
+
