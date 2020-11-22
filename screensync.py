@@ -49,7 +49,7 @@ while 1:
     image = ImageGrab.grab(bbox=(960, 490, 1060, 590))
     image_stats = ImageStat.Stat(image)
     try:
-        bulb.setRgb(image_stats.median[0], image_stats.median[1], image_stats.median[2], persist=False)
+        bulb.setRgb(image_stats.median[0], image_stats.median[2], image_stats.median[1],  persist=False)
     except:
         print("Oops looks like we couldn't connected to the LED strip")
 
