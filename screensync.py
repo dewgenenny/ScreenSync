@@ -8,12 +8,11 @@ import time
 parser = argparse.ArgumentParser()
 led_mac = "unset"
 
-
 # set some defaults in case they're not set on command line
-default_seconds_before_sleep = 10
+default_seconds_before_sleep = 300
 default_timing = 'fast'
 
-
+# parse command line arguments
 
 parser.add_argument("--led_mac", help="LED strip MAC address formatted without delimiters eg 63039F06BE28 ",
                     required=False)
@@ -31,8 +30,16 @@ timings = {"slow": 500,
            "unlimited": 1}
 
 seconds_to_wait_before_sleep = args.sleep
-requested_timing = args.timing.lower()
-debug_requested = args.debug.lower()
+
+if args.timing is not None:
+    requested_timing = args.timing.lower()
+else:
+    requested_timing = None
+
+if args.debug is not None:
+    debug_requested = args.debug.lower()
+else:
+    debug_requested = None
 
 if requested_timing is None:
     requested_timing = default_timing
@@ -41,16 +48,13 @@ elif not requested_timing in timings.keys():
     requested_timing = default_timing
     print("Requested timing mode not found, defaulting to: " + requested_timing)
 
-
-
 if seconds_to_wait_before_sleep is None:
     seconds_to_wait_before_sleep = default_seconds_before_sleep
-    print("Sleep frames not defined, defaulting to " + str(seconds_to_wait_before_sleep))
+    print("Sleep timer not defined, defaulting to " + str(seconds_to_wait_before_sleep))
 
 elif not seconds_to_wait_before_sleep.isnumeric:
     seconds_to_wait_before_sleep = default_seconds_before_sleep
-    print("Sleep frames not defined properly, defaulting to " + str(seconds_to_wait_before_sleep))
-
+    print("Sleep timer not defined properly, defaulting to " + str(seconds_to_wait_before_sleep))
 
 if debug_requested is None:
     DEBUG = False
@@ -62,10 +66,8 @@ elif debug_requested == 'true':
 else:
     DEBUG = False
 
-
 print("Sleep timeout set to " + str(seconds_to_wait_before_sleep) + " seconds")
 print("Starting with timing mode: " + requested_timing)
-
 
 # scan for the LED controllers
 
@@ -94,7 +96,7 @@ class FPS:
     def print_fps(self):
         millis = int(round(time.time() * 1000))
         if millis - self.last_run > 1000:
-            print("FPS: "+ str(self.ticks))
+            print("FPS: " + str(self.ticks))
             self.last_run = millis
             self.ticks = 0
 
@@ -150,4 +152,3 @@ while 1:
             print("Oops looks like we couldn't connected to the LED strip")
 
     time.sleep(timings[requested_timing] / 1000)
-
