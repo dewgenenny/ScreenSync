@@ -13,13 +13,13 @@ led_mac = "unset"
 default_seconds_before_sleep = 10
 default_timing = 'fast'
 
-DEBUG = True
+
 
 parser.add_argument("--led_mac", help="LED strip MAC address formatted without delimiters eg 63039F06BE28 ",
                     required=False)
 parser.add_argument("--timing", help="Timing mode: slow, medium, fast, unlimited", required=False)
 parser.add_argument("--sleep", help="Amount of seconds to wait before considered 'asleep'", required=False)
-
+parser.add_argument("--debug", help="true or false", required=False)
 
 args = parser.parse_args()
 
@@ -31,7 +31,8 @@ timings = {"slow": 500,
            "unlimited": 1}
 
 seconds_to_wait_before_sleep = args.sleep
-requested_timing = args.timing
+requested_timing = args.timing.lower()
+debug_requested = args.debug.lower()
 
 if requested_timing is None:
     requested_timing = default_timing
@@ -40,6 +41,8 @@ elif not requested_timing in timings.keys():
     requested_timing = default_timing
     print("Requested timing mode not found, defaulting to: " + requested_timing)
 
+
+
 if seconds_to_wait_before_sleep is None:
     seconds_to_wait_before_sleep = default_seconds_before_sleep
     print("Sleep frames not defined, defaulting to " + str(seconds_to_wait_before_sleep))
@@ -47,11 +50,22 @@ if seconds_to_wait_before_sleep is None:
 elif not seconds_to_wait_before_sleep.isnumeric:
     seconds_to_wait_before_sleep = default_seconds_before_sleep
     print("Sleep frames not defined properly, defaulting to " + str(seconds_to_wait_before_sleep))
+
+
+if debug_requested is None:
+    DEBUG = False
+elif debug_requested == 'false':
+    DEBUG = False
+elif debug_requested == 'true':
+    DEBUG = True
+    print("Turning debug on....")
 else:
-    print("Sleep timeout set to " + str(seconds_to_wait_before_sleep) + " seconds")
+    DEBUG = False
 
 
+print("Sleep timeout set to " + str(seconds_to_wait_before_sleep) + " seconds")
 print("Starting with timing mode: " + requested_timing)
+
 
 # scan for the LED controllers
 
