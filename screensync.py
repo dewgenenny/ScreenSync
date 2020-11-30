@@ -16,9 +16,10 @@ default_timing = 'fast'
 
 parser.add_argument("--led_mac", help="LED strip MAC address formatted without delimiters eg 63039F06BE28 ",
                     required=False)
-parser.add_argument("--timing", help="Timing mode: slow, medium, fast, unlimited", required=False)
+parser.add_argument("--timing", help="Timing mode", choices=['slow', 'medium', 'fast', 'unlimited'], required=False)
 parser.add_argument("--sleep", help="Amount of seconds to wait before considered 'asleep'", required=False)
-parser.add_argument("--debug", help="true or false", required=False)
+parser.add_argument("--colors", help="Order of LEDs", choices=['RGB', 'RBG', 'GRB', 'GBR', 'BRG', 'BGR'], required=False, default="RGB")
+parser.add_argument("--debug", help="true or false", choices=['true', 'false'], required=False)
 
 args = parser.parse_args()
 
@@ -30,6 +31,9 @@ timings = {"slow": 500,
            "unlimited": 1}
 
 seconds_to_wait_before_sleep = args.sleep
+
+if args.colors is not None:
+    requested_colors = args.colors.lower()
 
 if args.timing is not None:
     requested_timing = args.timing.lower()
@@ -146,9 +150,37 @@ while 1:
         except:
             print("Oops looks like we couldn't connected to the LED strip")
     else:
-        try:
-            bulb.setRgb(image_stats.median[0], image_stats.median[2], image_stats.median[1], persist=False)
-        except:
-            print("Oops looks like we couldn't connected to the LED strip")
+        if requested_colors == "rgb":
+            try:
+                bulb.setRgb(image_stats.median[0], image_stats.median[1], image_stats.median[2], persist=False)
+            except:
+                print("Oops looks like we couldn't connected to the LED strip")
+        elif requested_colors == "rbg":
+            try:
+                bulb.setRgb(image_stats.median[0], image_stats.median[2], image_stats.median[1], persist=False)
+            except:
+                print("Oops looks like we couldn't connected to the LED strip")
+        elif requested_colors == "grb":
+            try:
+                bulb.setRgb(image_stats.median[1], image_stats.median[0], image_stats.median[2], persist=False)
+            except:
+                print("Oops looks like we couldn't connected to the LED strip")
+        elif requested_colors == "gbr":
+            try:
+                bulb.setRgb(image_stats.median[1], image_stats.median[2], image_stats.median[0], persist=False)
+            except:
+                print("Oops looks like we couldn't connected to the LED strip")
+        elif requested_colors == "brg":
+            try:
+                bulb.setRgb(image_stats.median[2], image_stats.median[0], image_stats.median[1], persist=False)
+            except:
+                print("Oops looks like we couldn't connected to the LED strip")
+        elif requested_colors == "bgr":
+            try:
+                bulb.setRgb(image_stats.median[2], image_stats.median[1], image_stats.median[0], persist=False)
+            except:
+                print("Oops looks like we couldn't connected to the LED strip")
 
     time.sleep(timings[requested_timing] / 1000)
+
+#RGB, RBG, GRB, GBR, BRG, BGR
