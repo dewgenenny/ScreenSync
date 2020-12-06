@@ -3,18 +3,24 @@ from PIL import ImageStat
 from PIL import ImageEnhance
 from tkinter import *
 from flux_led import WifiLedBulb, BulbScanner
-import argparse
 import time
 import tkinter as tk
 
 window = tk.Tk(className='ScreenSync v0.1')
-window.geometry("200x200")
+window.geometry("300x300")
 window.configure(bg='black')
 
 fpsText = StringVar()
 ipAddress = StringVar()
 selectedIP = StringVar()
+selectedColor = StringVar()
+selectedTiming = StringVar()
+selectedSleep = StringVar()
+
+timingChoices = ['slow', 'medium', 'fast', 'unlimited']
 choices = {""}
+colorChoices = ['RGB', 'RBG', 'GRB', 'GBR', 'BRG', 'BGR']
+sleepChoices = [60,300,600,1200,3600,99999]
 
 def startstop():
     myUpdateLED.shouldUpdate = not myUpdateLED.shouldUpdate
@@ -28,97 +34,18 @@ fpslabel = tk.Label(text="FPS", fg='white', bg='black',font = "Helvetica 12 bold
 fpslabel.grid(column=0, row=0)
 fps = tk.Label(text="Starting", textvariable=fpsText, fg='white', bg='black', font ="Helvetica 64 bold")
 fps.grid(column=1, row=1)
-#ipAddressLabel = tk.Label(text="IP", textvariable=ipAddress, fg='white', bg='black',font = "Helvetica 12 bold italic")
-#ipAddressLabel.grid(column=1,row=2)
+
 startstopbutton = tk.Button(window, text ="Start / Stop", command = startstop)
 startstopbutton.config(fg='white', bg='black')
-startstopbutton.grid( column=1, row=3, pady=10)
+startstopbutton.grid( column=1, row=6, pady=10)
 
-# on change dropdown value
-def change_dropdown(*args):
-    print( selectedIP.get() )
-    global bulb
-    bulb = connectLED(selectedIP.get())
-    ipAddress.set(selectedIP.get())
-
-# link function to change dropdown
-selectedIP.trace('w', change_dropdown)
-
-
-# fpslabel.pack()
-# greeting.pack()
-# ipAddressLabel.pack()
-# startstopbutton.pack()
-
-parser = argparse.ArgumentParser()
-led_mac = "unset"
-
-# set some defaults in case they're not set on command line
-default_seconds_before_sleep = 300
-default_timing = 'fast'
-
-# parse command line arguments
-
-parser.add_argument("--led_mac", help="LED strip MAC address formatted without delimiters eg 63039F06BE28 ",
-                    required=False)
-parser.add_argument("--timing", help="Timing mode", choices=['slow', 'medium', 'fast', 'unlimited'], required=False)
-parser.add_argument("--sleep", help="Amount of seconds to wait before considered 'asleep'", required=False)
-parser.add_argument("--colors", help="Order of LEDs", choices=['RGB', 'RBG', 'GRB', 'GBR', 'BRG', 'BGR'], required=False, default="RGB")
-parser.add_argument("--debug", help="true or false", choices=['true', 'false'], required=False)
-
-args = parser.parse_args()
-
-# get timing mode // it's simply how many millis to wait per loop. Has an effect on CPU usage
 
 timings = {"slow": 500,
            "medium": 200,
            "fast": 50,
            "unlimited": 1}
 
-seconds_to_wait_before_sleep = args.sleep
 
-if args.colors is not None:
-    requested_colors = args.colors.lower()
-
-if args.timing is not None:
-    requested_timing = args.timing.lower()
-else:
-    requested_timing = None
-
-if args.debug is not None:
-    debug_requested = args.debug.lower()
-else:
-    debug_requested = None
-
-if requested_timing is None:
-    requested_timing = default_timing
-
-elif not requested_timing in timings.keys():
-    requested_timing = default_timing
-    print("Requested timing mode not found, defaulting to: " + requested_timing)
-
-if seconds_to_wait_before_sleep is None:
-    seconds_to_wait_before_sleep = default_seconds_before_sleep
-    print("Sleep timer not defined, defaulting to " + str(seconds_to_wait_before_sleep))
-
-elif not seconds_to_wait_before_sleep.isnumeric:
-    seconds_to_wait_before_sleep = default_seconds_before_sleep
-    print("Sleep timer not defined properly, defaulting to " + str(seconds_to_wait_before_sleep))
-
-if debug_requested is None:
-    DEBUG = False
-elif debug_requested == 'false':
-    DEBUG = False
-elif debug_requested == 'true':
-    DEBUG = True
-    print("Turning debug on....")
-else:
-    DEBUG = False
-
-print("Sleep timeout set to " + str(seconds_to_wait_before_sleep) + " seconds")
-print("Starting with timing mode: " + requested_timing)
-
-# scan for the LED controllers
 
 scanner = BulbScanner()
 scanner.scan(timeout=4)
@@ -134,20 +61,47 @@ if len(scanner.found_bulbs) == 0:
 choices = scanner_results
 
 
-chooseip = tk.Label(text=selectedIP.get(), fg='white', bg='black',font = "Helvetica 12 bold italic")
-chooseip.grid(column=1, row=0, sticky= 'E')
+chooseip = tk.Label(text='Select IP: ', fg='white', bg='black',font = "Helvetica 12 bold italic")
+chooseip.grid(column=0, row=2, sticky= 'E')
 popupMenu = tk.OptionMenu(window, selectedIP, *choices)
-popupMenu.config(text='choose', fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
+selectedIP.set(choices[0])
+popupMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
 popupMenu.grid(column=1, row=2)
+
+choose_color = tk.Label(text='Select Mode: ', fg='white', bg='black',font = "Helvetica 12 bold italic")
+choose_color.grid(column=0, row=3, sticky= 'E')
+colorMenu = tk.OptionMenu(window, selectedColor, *colorChoices)
+
+selectedColor.set(colorChoices[0])
+colorMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
+colorMenu.grid(column=1, row=3)
+
+choose_timing = tk.Label(text='Select Timing: ', fg='white', bg='black',font = "Helvetica 12 bold italic")
+choose_timing.grid(column=0, row=4, sticky= 'E')
+timingMenu = tk.OptionMenu(window, selectedTiming, *timingChoices)
+
+selectedTiming.set(timingChoices[3])
+timingMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
+timingMenu.grid(column=1, row=4)
+
+choose_sleep = tk.Label(text='Choose Timeout: ', fg='white', bg='black',font = "Helvetica 12 bold italic")
+choose_sleep.grid(column=0, row=5, sticky= 'E')
+sleepMenu = tk.OptionMenu(window, selectedSleep, *sleepChoices)
+
+selectedSleep.set(sleepChoices[3])
+sleepMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
+sleepMenu.grid(column=1, row=5)
+
+
 
 
 def connectLED(ip):
     try:
-        led_to_connect = scanner.getBulbInfoByID(args.led_mac)
+        #led_to_connect = scanner.getBulbInfoByID(args.led_mac)
         #bulb = WifiLedBulb(led_to_connect['ipaddr'])
         bulb = WifiLedBulb(ip)
         print("Connected to LED strip with IP: " + ip)
-        ipAddress.set("IP: "+str(led_to_connect['ipaddr']))
+        ipAddress.set("IP: "+ ip)
     except:
         print("No valid MAC address provided, attempting to use first one discovered: " + scanner.found_bulbs[0]['id'])
         print("Unable to connect to " + ip)
@@ -156,7 +110,43 @@ def connectLED(ip):
     return bulb
 
 
-bulb = connectLED("10.0.0.188")
+def change_selected_ip(*args):
+    # print( selectedIP.get() )
+    global bulb
+    bulb = connectLED(selectedIP.get())
+    ipAddress.set(selectedIP.get())
+
+def change_selected_color(*args):
+    global selectedColor
+    global myUpdateLED
+    # print (myUpdateLED.colorMode)
+    myUpdateLED.colorMode = selectedColor.get().lower()
+    # print (myUpdateLED.colorMode)
+#
+def change_selected_timing(*args):
+    global selectedTiming
+    global myUpdateLED
+    # print (myUpdateLED.updateFrequency)
+    myUpdateLED.updateFrequency = selectedTiming.get().lower()
+    # print (myUpdateLED.updateFrequency)
+
+def change_selected_sleep(*args):
+    global selectedSleep
+    global mySleepTimer
+    # print (mySleepTimer.millis_to_wait)
+    mySleepTimer.millis_to_wait = int(selectedSleep.get()) * 1000
+    # print (mySleepTimer.millis_to_wait)
+
+
+
+# link function to change dropdown
+selectedIP.trace('w', change_selected_ip)
+selectedColor.trace('w', change_selected_color)
+selectedTiming.trace('w', change_selected_timing)
+selectedSleep.trace('w', change_selected_sleep)
+
+# print(str(selectedIP.get()))
+bulb = connectLED(str(selectedIP.get()))
 
 
 
@@ -165,10 +155,10 @@ class FPS:
     ticks = 0
     last_run = 0
 
-    def print_fps(self):
+    def calc_fps(self):
         millis = int(round(time.time() * 1000))
         if millis - self.last_run > 1000:
-            print("FPS: " + str(self.ticks))
+            #print("FPS: " + str(self.ticks))
             fpsText.set( str(self.ticks))
             self.last_run = millis
             self.ticks = 0
@@ -201,12 +191,14 @@ class SleepTimer:
 
 
 myFPS = FPS()
-mySleepTimer = SleepTimer(int(seconds_to_wait_before_sleep) * int(1000))
 
 
 class UpdateLED:
 
     shouldUpdate = True
+    colorMode = "rgb"
+    updateFrequency = 2
+    sleepTimer = 600
 
     def update(self, tkinterObj):
 
@@ -217,9 +209,8 @@ class UpdateLED:
             image2 = converter.enhance(3)
 
             image_stats = ImageStat.Stat(image2)
-            if DEBUG:
-                myFPS.ticks = myFPS.ticks + 1
-                myFPS.print_fps()
+            myFPS.ticks = myFPS.ticks + 1
+            myFPS.calc_fps()
 
             if mySleepTimer.check_if_sleeping(image_stats.median[0], image_stats.median[2], image_stats.median[1]):
                 try:
@@ -227,40 +218,48 @@ class UpdateLED:
                 except:
                     print("Oops looks like we couldn't connected to the LED strip")
             else:
-                if requested_colors == "rgb":
+                if self.colorMode == "rgb":
                     try:
                         bulb.setRgb(image_stats.median[0], image_stats.median[1], image_stats.median[2], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
-                elif requested_colors == "rbg":
+                elif self.colorMode == "rbg":
                     try:
                         bulb.setRgb(image_stats.median[0], image_stats.median[2], image_stats.median[1], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
-                elif requested_colors == "grb":
+                elif self.colorMode == "grb":
                     try:
                         bulb.setRgb(image_stats.median[1], image_stats.median[0], image_stats.median[2], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
-                elif requested_colors == "gbr":
+                elif self.colorMode == "gbr":
                     try:
                         bulb.setRgb(image_stats.median[1], image_stats.median[2], image_stats.median[0], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
-                elif requested_colors == "brg":
+                elif self.colorMode == "brg":
                     try:
                         bulb.setRgb(image_stats.median[2], image_stats.median[0], image_stats.median[1], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
-                elif requested_colors == "bgr":
+                elif self.colorMode == "bgr":
                     try:
                         bulb.setRgb(image_stats.median[2], image_stats.median[1], image_stats.median[0], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
-        tkinterObj.after(2, lambda: myUpdateLED.update(tkinterObj))
+                else:
+                    print("uh oh")
+        tkinterObj.after(timings[self.updateFrequency], lambda: myUpdateLED.update(tkinterObj))
 
 
 myUpdateLED = UpdateLED()
+myUpdateLED.colorMode = selectedColor.get().lower()
+myUpdateLED.updateFrequency = selectedTiming.get().lower()
+myUpdateLED.sleepTimer = selectedSleep.get()
+
+
+mySleepTimer = SleepTimer(int(selectedSleep.get())*1000)
 
 # Need to kick off the LED update once so it can run and request an 'after' from tkinter
 
