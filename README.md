@@ -18,27 +18,9 @@ Pillow installation:
 
 ##### Running
 
-`usage: screensync.py [-h] [--led_mac LED_MAC] [--timing TIMING]
-                      [--sleep SLEEP] [--debug DEBUG]`
- 
- optional arguments:
- 
-   -h, --help         (show the help message and exit)
-   
-   --led_mac LED_MAC  (LED strip MAC address formatted without delimiters eg 63039F06BE28)
-                      
-   --timing TIMING    (Timing mode: slow, medium, fast, unlimited)
-   
-   --sleep SLEEP      (Amount of seconds to wait before considered 'asleep')
-   
-   --debug DEBUG      (true or false - will print FPS to CLI each second)
-   
+`usage: screensync.py`   
 
-You can run the utility without needing to provide any arguments. It will then go out and scan for 'magic home' / flux_led compatible controllers and connect to the first one it finds.
-
-Full example running with all options:
-
-`python3 screensync.py --led_mac 60049F06BA48 --timing unlimited --sleep 300 --debug true`
+All options can now be chosen in the GUI :)
 
 Here's a video of it in action - https://youtu.be/izCWz9-xkw4
 
