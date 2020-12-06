@@ -5,10 +5,21 @@ from tkinter import *
 from flux_led import WifiLedBulb, BulbScanner
 import time
 import tkinter as tk
+import configparser
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+if not config.has_section('settings'):
+    config['settings'] = {'timing': 'fast',
+                          'colormode': 'rgb',
+                          'sleeptimeout': '600'}
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
 
 window = tk.Tk(className='ScreenSync v0.1')
-window.geometry("300x300")
-window.configure(bg='black')
+window.geometry("280x260")
+window.configure(bg='black', padx=20)
 
 fpsText = StringVar()
 ipAddress = StringVar()
@@ -16,9 +27,46 @@ selectedIP = StringVar()
 selectedColor = StringVar()
 selectedTiming = StringVar()
 selectedSleep = StringVar()
+choices = []
+
+def scan():
+    global choices
+    scanner = BulbScanner()
+    scanner.scan(timeout=4)
+    scanner_results = []
+
+    for found_bulb in scanner.found_bulbs:
+        print("Found a bulb: " + found_bulb['ipaddr'] + " with MAC: " + found_bulb['id'])
+        scanner_results.append(found_bulb['ipaddr'])
+    # Connect to the LED controller
+    if len(scanner.found_bulbs) == 0:
+        scanner_results.append("No controllers found :(")
+
+    choices = scanner_results
+    print(choices)
+
+def scanbutton():
+    global popupMenu
+    global choices
+    global selectedIP
+    scan()
+    menu = popupMenu["menu"]
+    menu.delete(0, "end")
+    for string in choices:
+        menu.add_command(label=string,
+                         command=lambda value=string: selectedIP.set(value))
+
 
 timingChoices = ['slow', 'medium', 'fast', 'unlimited']
-choices = {""}
+
+
+
+if config.has_section('settings') and config.has_option('settings','ip'):
+    choices.append(config['settings']['ip'])
+else:
+    scan()
+
+
 colorChoices = ['RGB', 'RBG', 'GRB', 'GBR', 'BRG', 'BGR']
 sleepChoices = [60,300,600,1200,3600,99999]
 
@@ -27,11 +75,24 @@ def startstop():
     fpsText.set("🙈")
 
 
+
+
+def saveConfig(ip, timing, colormode, sleeptimeout):
+
+    config['settings']['ip']= ip
+    config['settings']['timing']= timing
+    config['settings']['colormode']= colormode
+    config['settings']['sleeptimeout']= sleeptimeout
+
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+
+
 window.rowconfigure(2, minsize=30)
 window.columnconfigure(2, minsize=30)
 
-fpslabel = tk.Label(text="FPS", fg='white', bg='black',font = "Helvetica 12 bold italic")
-fpslabel.grid(column=0, row=0)
+fpslabel = tk.Label(text="FPS", fg='white', bg='black',font = "Helvetica 32 bold italic")
+fpslabel.grid(column=0, row=1)
 fps = tk.Label(text="Starting", textvariable=fpsText, fg='white', bg='black', font ="Helvetica 64 bold")
 fps.grid(column=1, row=1)
 
@@ -39,6 +100,9 @@ startstopbutton = tk.Button(window, text ="Start / Stop", command = startstop)
 startstopbutton.config(fg='white', bg='black')
 startstopbutton.grid( column=1, row=6, pady=10)
 
+scanbutton = tk.Button(window, text ="Scan", command = scanbutton)
+scanbutton.config(fg='white', bg='black')
+scanbutton.grid( column=0, row=6, pady=10)
 
 timings = {"slow": 500,
            "medium": 200,
@@ -47,18 +111,6 @@ timings = {"slow": 500,
 
 
 
-scanner = BulbScanner()
-scanner.scan(timeout=4)
-scanner_results = []
-
-for found_bulb in scanner.found_bulbs:
-    print("Found a bulb: " + found_bulb['ipaddr'] + " with MAC: " + found_bulb['id'])
-    scanner_results.append(found_bulb['ipaddr'])
-# Connect to the LED controller
-if len(scanner.found_bulbs) == 0:
-    scanner_results.append("No controllers found :(")
-
-choices = scanner_results
 
 
 chooseip = tk.Label(text='Select IP: ', fg='white', bg='black',font = "Helvetica 12 bold italic")
@@ -72,7 +124,7 @@ choose_color = tk.Label(text='Select Mode: ', fg='white', bg='black',font = "Hel
 choose_color.grid(column=0, row=3, sticky= 'E')
 colorMenu = tk.OptionMenu(window, selectedColor, *colorChoices)
 
-selectedColor.set(colorChoices[0])
+selectedColor.set(config['settings']['colormode'])
 colorMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
 colorMenu.grid(column=1, row=3)
 
@@ -80,7 +132,7 @@ choose_timing = tk.Label(text='Select Timing: ', fg='white', bg='black',font = "
 choose_timing.grid(column=0, row=4, sticky= 'E')
 timingMenu = tk.OptionMenu(window, selectedTiming, *timingChoices)
 
-selectedTiming.set(timingChoices[3])
+selectedTiming.set(config['settings']['timing'])
 timingMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
 timingMenu.grid(column=1, row=4)
 
@@ -88,7 +140,7 @@ choose_sleep = tk.Label(text='Choose Timeout: ', fg='white', bg='black',font = "
 choose_sleep.grid(column=0, row=5, sticky= 'E')
 sleepMenu = tk.OptionMenu(window, selectedSleep, *sleepChoices)
 
-selectedSleep.set(sleepChoices[3])
+selectedSleep.set(config['settings']['sleeptimeout'])
 sleepMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
 sleepMenu.grid(column=1, row=5)
 
@@ -110,11 +162,14 @@ def connectLED(ip):
     return bulb
 
 
+#def saveConfig(ip, timing, color, sleep):
+
 def change_selected_ip(*args):
     # print( selectedIP.get() )
     global bulb
     bulb = connectLED(selectedIP.get())
     ipAddress.set(selectedIP.get())
+    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
 
 def change_selected_color(*args):
     global selectedColor
@@ -122,20 +177,26 @@ def change_selected_color(*args):
     # print (myUpdateLED.colorMode)
     myUpdateLED.colorMode = selectedColor.get().lower()
     # print (myUpdateLED.colorMode)
-#
+    saveConfig(selectedIP.get(), selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+
+
 def change_selected_timing(*args):
     global selectedTiming
     global myUpdateLED
     # print (myUpdateLED.updateFrequency)
     myUpdateLED.updateFrequency = selectedTiming.get().lower()
     # print (myUpdateLED.updateFrequency)
+    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+
 
 def change_selected_sleep(*args):
     global selectedSleep
     global mySleepTimer
-    # print (mySleepTimer.millis_to_wait)
-    mySleepTimer.millis_to_wait = int(selectedSleep.get()) * 1000
-    # print (mySleepTimer.millis_to_wait)
+    #print (mySleepTimer.seconds_to_wait)
+    mySleepTimer.seconds_to_wait = int(selectedSleep.get())
+    #print (mySleepTimer.seconds_to_wait)
+    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+
 
 
 
@@ -171,15 +232,16 @@ class SleepTimer:
     last_r = 0
     last_b = 0
     last_g = 0
-    millis_to_wait = 1000
+    seconds_to_wait = 300
+    millis_to_wait = seconds_to_wait * 1000
+
 
     def __init__(self, data):
-        self.millis_to_wait = data
+        self.seconds_to_wait = data
 
     def check_if_sleeping(self, r, g, b):
-
         if self.last_r == r and self.last_g == g and self.last_b == b:
-            if int(round(time.time() * 1000)) - self.same_color > int(self.millis_to_wait):
+            if int(round(time.time() * 1000)) - self.same_color > int(self.seconds_to_wait*1000):
                 return True
             return False
         else:
@@ -259,13 +321,16 @@ myUpdateLED.updateFrequency = selectedTiming.get().lower()
 myUpdateLED.sleepTimer = selectedSleep.get()
 
 
-mySleepTimer = SleepTimer(int(selectedSleep.get())*1000)
+mySleepTimer = SleepTimer(int(selectedSleep.get()))
 
 # Need to kick off the LED update once so it can run and request an 'after' from tkinter
 
 myUpdateLED.update(window)
 
 # Enter into tkinter main loop
+
+saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+
 
 window.mainloop()
 
