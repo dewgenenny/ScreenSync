@@ -22,13 +22,14 @@ config.read('config.ini')
 if not config.has_section('settings'):
     config['settings'] = {'timing': 'fast',
                           'colormode': 'rgb',
-                          'sleeptimeout': '600'}
+                          'sleeptimeout': '600',
+                          'sensorsize': 'small'}
     with open('config.ini', 'w') as configfile:
         config.write(configfile)
 
-window = tk.Tk(className='ScreenSync v0.1')
-window.title("ScreenSync v0.2")
-window.geometry("300x260")
+window = tk.Tk(className='ScreenSync v0.3')
+window.title("ScreenSync v0.3")
+window.geometry("300x290")
 window.iconbitmap(bitmap= str(application_path)+ '\icons\screensync.ico')
 print(str(application_path)+ '\icons\screensync.ico')
 window.configure(bg='black', padx=20)
@@ -39,6 +40,7 @@ selectedIP = StringVar()
 selectedColor = StringVar()
 selectedTiming = StringVar()
 selectedSleep = StringVar()
+selectedSensorSize = StringVar()
 choices = []
 
 def scan():
@@ -81,6 +83,22 @@ else:
 
 colorChoices = ['RGB', 'RBG', 'GRB', 'GBR', 'BRG', 'BGR']
 sleepChoices = [60,300,600,1200,3600,99999]
+sensorSizeChoices = ['tiny','small','medium', 'large', 'xlarge']
+boundingbox = [ 910, 490, 1010, 590]
+
+
+
+def calculateBoundingBox(sensorsize):
+    if sensorsize == 'tiny':
+        return [ 930, 500, 990, 580]
+    if sensorsize == 'small':
+        return [ 910, 490, 1010, 590]
+    if sensorsize == 'medium':
+        return [ 890, 470, 1030, 610]
+    if sensorsize == 'large':
+        return [ 400, 200, 1200, 800]
+    if sensorsize == 'xlarge':
+        return [ 0, 0, 1920, 1080]
 
 def startstop():
     myUpdateLED.shouldUpdate = not myUpdateLED.shouldUpdate
@@ -89,18 +107,19 @@ def startstop():
 
 
 
-def saveConfig(ip, timing, colormode, sleeptimeout):
+def saveConfig(ip, timing, colormode, sleeptimeout, sensorsize):
 
     config['settings']['ip']= ip
     config['settings']['timing']= timing
     config['settings']['colormode']= colormode
     config['settings']['sleeptimeout']= sleeptimeout
+    config['settings']['sensorsize'] = sensorsize
 
     with open('config.ini', 'w') as configfile:
         config.write(configfile)
 
 
-window.rowconfigure(2, minsize=30)
+window.rowconfigure(3, minsize=30)
 window.columnconfigure(2, minsize=30)
 
 fpslabel = tk.Label(text="FPS", fg='white', bg='black',font = "Helvetica 32 bold italic")
@@ -110,11 +129,11 @@ fps.grid(column=1, row=1)
 
 startstopbutton = tk.Button(window, text ="Start / Stop", command = startstop)
 startstopbutton.config(fg='white', bg='black')
-startstopbutton.grid( column=1, row=6, pady=10)
+startstopbutton.grid( column=1, row=7, pady=10)
 
 scanbutton = tk.Button(window, text ="Scan", command = scanbutton)
 scanbutton.config(fg='white', bg='black')
-scanbutton.grid( column=0, row=6, pady=10)
+scanbutton.grid( column=0, row=7, pady=10)
 
 timings = {"slow": 500,
            "medium": 200,
@@ -156,7 +175,13 @@ selectedSleep.set(config['settings']['sleeptimeout'])
 sleepMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
 sleepMenu.grid(column=1, row=5)
 
+choose_sensorsize = tk.Label(text='Sensor size: ', fg='white', bg='black',font = "Helvetica 12 bold italic")
+choose_sensorsize.grid(column=0, row=6, sticky= 'E')
+sensorsizeMenu = tk.OptionMenu(window, selectedSensorSize, *sensorSizeChoices)
 
+selectedSensorSize.set(config['settings']['sensorsize'])
+sensorsizeMenu.config( fg='white', bg='black', highlightbackground='black', highlightcolor='black',highlightthickness=0, bd=0)
+sensorsizeMenu.grid(column=1, row=6)
 
 
 def connectLED(ip):
@@ -181,7 +206,7 @@ def change_selected_ip(*args):
     global bulb
     bulb = connectLED(selectedIP.get())
     ipAddress.set(selectedIP.get())
-    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ), selectedSensorSize.get())
 
 def change_selected_color(*args):
     global selectedColor
@@ -189,7 +214,7 @@ def change_selected_color(*args):
     # print (myUpdateLED.colorMode)
     myUpdateLED.colorMode = selectedColor.get().lower()
     # print (myUpdateLED.colorMode)
-    saveConfig(selectedIP.get(), selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ), selectedSensorSize.get())
 
 
 def change_selected_timing(*args):
@@ -198,7 +223,7 @@ def change_selected_timing(*args):
     # print (myUpdateLED.updateFrequency)
     myUpdateLED.updateFrequency = selectedTiming.get().lower()
     # print (myUpdateLED.updateFrequency)
-    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ), selectedSensorSize.get())
 
 
 def change_selected_sleep(*args):
@@ -207,7 +232,14 @@ def change_selected_sleep(*args):
     #print (mySleepTimer.seconds_to_wait)
     mySleepTimer.seconds_to_wait = int(selectedSleep.get())
     #print (mySleepTimer.seconds_to_wait)
-    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ), selectedSensorSize.get())
+
+def change_selected_sensorsize(*args):
+    global selectedSensorSize
+    global mySensorSize
+    global boundingbox
+    boundingbox = calculateBoundingBox(selectedSensorSize.get())
+    saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ), selectedSensorSize.get())
 
 
 
@@ -217,7 +249,7 @@ selectedIP.trace('w', change_selected_ip)
 selectedColor.trace('w', change_selected_color)
 selectedTiming.trace('w', change_selected_timing)
 selectedSleep.trace('w', change_selected_sleep)
-
+selectedSensorSize.trace('w', change_selected_sensorsize)
 # print(str(selectedIP.get()))
 bulb = connectLED(str(selectedIP.get()))
 
@@ -264,6 +296,7 @@ class SleepTimer:
             return False
 
 
+
 myFPS = FPS()
 
 
@@ -278,7 +311,8 @@ class UpdateLED:
 
         if self.shouldUpdate:
 
-            image = ImageGrab.grab(bbox=(910, 490, 1010, 590))
+            image = ImageGrab.grab(calculateBoundingBox(selectedSensorSize.get()))
+
             converter = ImageEnhance.Color(image)
             image2 = converter.enhance(3)
 
@@ -341,7 +375,7 @@ myUpdateLED.update(window)
 
 # Enter into tkinter main loop
 
-saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ))
+saveConfig(selectedIP.get(),selectedTiming.get().lower(), selectedColor.get().lower(), str(mySleepTimer.seconds_to_wait ), selectedSensorSize.get())
 
 
 window.mainloop()
