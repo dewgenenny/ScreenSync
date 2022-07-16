@@ -22,5 +22,7 @@ Pillow installation:
 
 __Update July 2022__ - now added the option to choose the 'sensor size' in the GUI. This allows you to select the size of the bounding box where the image of the screen is sampled. Tiny and small are good for using with FPS games (this is my use case), large and xlarge probably better for watching videos or similar...
 
+![Screenshot](screenshot.png)
+
 Here's a video of it in action - https://youtu.be/izCWz9-xkw4
 
