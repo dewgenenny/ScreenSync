@@ -7,6 +7,15 @@ import time
 import tkinter as tk
 import configparser
 
+import sys, os
+if getattr(sys, 'frozen', False):
+    # If the application is run as a bundle, the PyInstaller bootloader
+    # extends the sys module by a flag frozen=True and sets the app
+    # path into variable _MEIPASS'.
+    application_path = sys._MEIPASS
+else:
+    application_path = os.path.dirname(os.path.abspath(__file__))
+
 config = configparser.ConfigParser()
 config.read('config.ini')
 
@@ -18,7 +27,10 @@ if not config.has_section('settings'):
         config.write(configfile)
 
 window = tk.Tk(className='ScreenSync v0.1')
-window.geometry("280x260")
+window.title("ScreenSync v0.2")
+window.geometry("300x260")
+window.iconbitmap(bitmap= str(application_path)+ '\icons\screensync.ico')
+print(str(application_path)+ '\icons\screensync.ico')
 window.configure(bg='black', padx=20)
 
 fpsText = StringVar()
@@ -106,7 +118,7 @@ scanbutton.grid( column=0, row=6, pady=10)
 
 timings = {"slow": 500,
            "medium": 200,
-           "fast": 50,
+           "fast": 10,
            "unlimited": 1}
 
 
