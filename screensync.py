@@ -6,8 +6,9 @@ from flux_led import WifiLedBulb, BulbScanner
 import time
 import tkinter as tk
 import configparser
-
 import sys, os
+from colorthief import ColorThief
+
 if getattr(sys, 'frozen', False):
     # If the application is run as a bundle, the PyInstaller bootloader
     # extends the sys module by a flag frozen=True and sets the app
@@ -31,7 +32,7 @@ window = tk.Tk(className='ScreenSync v0.3')
 window.title("ScreenSync v0.3")
 window.geometry("300x290")
 window.iconbitmap(bitmap= str(application_path)+ '\icons\screensync.ico')
-print(str(application_path)+ '\icons\screensync.ico')
+#print(str(application_path)+ '\icons\screensync.ico')
 window.configure(bg='black', padx=20)
 
 fpsText = StringVar()
@@ -42,6 +43,15 @@ selectedTiming = StringVar()
 selectedSleep = StringVar()
 selectedSensorSize = StringVar()
 choices = []
+
+screensize= ImageGrab.grab().size
+screenX = screensize[0]
+screenY = screensize[1]
+screenCenter = [int(screenX/2),int(screenY/2)]
+
+print (screenCenter)
+
+
 
 def scan():
     global choices
@@ -90,15 +100,15 @@ boundingbox = [ 910, 490, 1010, 590]
 
 def calculateBoundingBox(sensorsize):
     if sensorsize == 'tiny':
-        return [ 930, 500, 990, 580]
+        return [ screenCenter[0] - screenX*0.05, screenCenter[1] - screenY*0.05, screenCenter[0] + screenX*0.05, screenCenter[1] + screenY*0.05]
     if sensorsize == 'small':
-        return [ 910, 490, 1010, 590]
+        return [ screenCenter[0] - screenX*0.075, screenCenter[1] - screenY*0.075, screenCenter[0] + screenX*0.075, screenCenter[1] + screenY*0.075]
     if sensorsize == 'medium':
-        return [ 890, 470, 1030, 610]
+        return [ screenCenter[0] - screenX*0.15, screenCenter[1] - screenY*0.15, screenCenter[0] + screenX*0.15, screenCenter[1] + screenY*0.15]
     if sensorsize == 'large':
-        return [ 400, 200, 1200, 800]
+        return [ screenCenter[0] - screenX*0.33, screenCenter[1] - screenY*0.33, screenCenter[0] + screenX*0.33, screenCenter[1] + screenY*0.33]
     if sensorsize == 'xlarge':
-        return [ 0, 0, 1920, 1080]
+        return [ screenCenter[0] - screenX*0.5, screenCenter[1] - screenY*0.5, screenCenter[0] + screenX*0.5, screenCenter[1] + screenY*0.5]
 
 def startstop():
     myUpdateLED.shouldUpdate = not myUpdateLED.shouldUpdate
@@ -312,7 +322,7 @@ class UpdateLED:
         if self.shouldUpdate:
 
             image = ImageGrab.grab(calculateBoundingBox(selectedSensorSize.get()))
-
+            #dominant_color = get_dominant_color(image)
             converter = ImageEnhance.Color(image)
             image2 = converter.enhance(3)
 
@@ -321,6 +331,7 @@ class UpdateLED:
             myFPS.calc_fps()
 
             if mySleepTimer.check_if_sleeping(image_stats.median[0], image_stats.median[2], image_stats.median[1]):
+            #if mySleepTimer.check_if_sleeping(dominant_color[0], dominant_color[2], dominant_color[1]):
                 try:
                     bulb.setRgb(0, 0, 0, persist=False)
                 except:
@@ -329,31 +340,37 @@ class UpdateLED:
                 if self.colorMode == "rgb":
                     try:
                         bulb.setRgb(image_stats.median[0], image_stats.median[1], image_stats.median[2], persist=False)
+                        #bulb.setRgb(dominant_color[0], dominant_color[1], dominant_color[2], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
                 elif self.colorMode == "rbg":
                     try:
                         bulb.setRgb(image_stats.median[0], image_stats.median[2], image_stats.median[1], persist=False)
+                       #bulb.setRgb(dominant_color[0], dominant_color[2], dominant_color[1], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
                 elif self.colorMode == "grb":
                     try:
                         bulb.setRgb(image_stats.median[1], image_stats.median[0], image_stats.median[2], persist=False)
+                        #bulb.setRgb(dominant_color[1], dominant_color[0], dominant_color[2], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
                 elif self.colorMode == "gbr":
                     try:
                         bulb.setRgb(image_stats.median[1], image_stats.median[2], image_stats.median[0], persist=False)
+                        #bulb.setRgb(dominant_color[1], dominant_color[2], dominant_color[0], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
                 elif self.colorMode == "brg":
                     try:
                         bulb.setRgb(image_stats.median[2], image_stats.median[0], image_stats.median[1], persist=False)
+                        #bulb.setRgb(dominant_color[2], dominant_color[0], dominant_color[1], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
                 elif self.colorMode == "bgr":
                     try:
                         bulb.setRgb(image_stats.median[2], image_stats.median[1], image_stats.median[0], persist=False)
+                        #bulb.setRgb(dominant_color[2], dominant_color[1], dominant_color[0], persist=False)
                     except:
                         print("Oops looks like we couldn't connected to the LED strip")
                 else:
