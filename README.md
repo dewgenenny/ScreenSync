@@ -1,3 +1,5 @@
+### There is a new version available here: https://github.com/dewgenenny/ScreenSync_v2
+
 ### Screen Sync is a python based utility to synchronise screen color with 'Magic Home' LED controllers.
 
 It's a very early go at using the awesome flux_led library (https://github.com/beville/flux_led) to create a kind of cheap and cheerful 'philips hue light sync' experience.
